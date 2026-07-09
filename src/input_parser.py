@@ -1,3 +1,4 @@
+from board import Board
 class InputParser:
     """אחראית לקרוא stdin ולהפריד Board: מ-Commands:"""
     
