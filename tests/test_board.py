@@ -62,6 +62,13 @@ class TestValidateUnknownToken:
         with pytest.raises(BoardParseError) as exc_info:
             board.validate()
         assert exc_info.value.error_code == "UNKNOWN_TOKEN"
+        
+    def test_raises_on_wrong_length_token(self):
+        rows = [["wKing", "."]]
+        board = Board(rows)
+        with pytest.raises(BoardParseError) as exc_info:
+            board.validate()
+        assert exc_info.value.error_code == "UNKNOWN_TOKEN"
 
 
 class TestValidateRowWidthMismatch:
