@@ -1,3 +1,4 @@
+# tests/test_game.py
 import pytest
 from board import Board
 from game import Game
@@ -70,3 +71,48 @@ class TestBoardOutput:
     def test_get_board_output_matches_canonical_string(self):
         game = make_game([["wK", "."], [".", "bK"]])
         assert game.get_board_output() == "wK .\n. bK"
+
+
+class TestPathBlocking:
+    def test_rook_blocked_by_own_piece_does_not_move(self):
+        game = make_game([["wR", "wP", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        assert game.board.get_token(0, 0) == "wR"
+        assert game.board.get_token(0, 2) == "."
+
+    def test_bishop_blocked_by_own_piece_does_not_move(self):
+        game = make_game([["wB", ".", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 250)
+        assert game.board.get_token(0, 0) == "wB"
+        assert game.board.get_token(2, 2) == "."
+
+    def test_knight_jumps_over_blockers(self):
+        game = make_game([["wN", "wP", "."], ["wP", ".", "."], [".", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(150, 250)
+        assert game.board.get_token(2, 1) == "wN"
+        assert game.board.get_token(0, 0) == "."
+
+    def test_rook_moves_when_path_is_clear(self):
+        game = make_game([["wR", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        assert game.board.get_token(0, 2) == "wR"
+
+
+class TestCapture:
+    def test_cannot_capture_own_piece(self):
+        game = make_game([["wR", ".", "wP"]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        assert game.board.get_token(0, 0) == "wR"
+        assert game.board.get_token(0, 2) == "wP"
+
+    def test_captures_enemy_piece_at_destination(self):
+        game = make_game([["wR", ".", "bR"]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        assert game.board.get_token(0, 2) == "wR"
+        assert game.board.get_token(0, 0) == "."

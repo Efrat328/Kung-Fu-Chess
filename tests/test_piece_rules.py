@@ -1,3 +1,4 @@
+# tests/test_piece_rules.py
 import pytest
 from piece_rules import PieceMovementRules
 
@@ -78,3 +79,42 @@ class TestKnightMove:
 class TestUnknownPiece:
     def test_unrecognized_letter_returns_false(self):
         assert PieceMovementRules.is_legal_move("Z", (0, 0), (1, 1)) is False
+
+
+class TestRequiresClearPath:
+    def test_rook_requires_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("R") is True
+
+    def test_bishop_requires_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("B") is True
+
+    def test_queen_requires_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("Q") is True
+
+    def test_knight_does_not_require_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("N") is False
+
+    def test_king_does_not_require_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("K") is False
+
+
+class TestGetPathCells:
+    def test_horizontal_path_returns_cells_between(self):
+        cells = PieceMovementRules.get_path_cells((0, 0), (0, 3))
+        assert cells == [(0, 1), (0, 2)]
+
+    def test_vertical_path_returns_cells_between(self):
+        cells = PieceMovementRules.get_path_cells((0, 0), (3, 0))
+        assert cells == [(1, 0), (2, 0)]
+
+    def test_diagonal_path_returns_cells_between(self):
+        cells = PieceMovementRules.get_path_cells((0, 0), (3, 3))
+        assert cells == [(1, 1), (2, 2)]
+
+    def test_adjacent_cells_have_empty_path(self):
+        cells = PieceMovementRules.get_path_cells((0, 0), (0, 1))
+        assert cells == []
+
+    def test_reverse_direction_path(self):
+        cells = PieceMovementRules.get_path_cells((3, 3), (0, 0))
+        assert cells == [(2, 2), (1, 1)]
