@@ -116,3 +116,39 @@ class TestCapture:
         game.handle_click(250, 50)
         assert game.board.get_token(0, 2) == "wR"
         assert game.board.get_token(0, 0) == "."
+
+
+class TestPawnMovement:
+    def test_white_pawn_moves_up(self):
+        game = make_game([[".", ".", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(150, 150)
+        game.handle_click(150, 50)
+        assert game.board.get_token(0, 1) == "wP"
+        assert game.board.get_token(1, 1) == "."
+
+    def test_black_pawn_moves_down(self):
+        game = make_game([[".", ".", "."], [".", "bP", "."], [".", ".", "."]])
+        game.handle_click(150, 150)
+        game.handle_click(150, 250)
+        assert game.board.get_token(2, 1) == "bP"
+        assert game.board.get_token(1, 1) == "."
+
+    def test_white_pawn_double_step_is_illegal(self):
+        game = make_game([[".", ".", "."], [".", ".", "."], [".", ".", "."], [".", "wP", "."]])
+        game.handle_click(150, 350)
+        game.handle_click(150, 150)
+        assert game.board.get_token(3, 1) == "wP"
+        assert game.board.get_token(1, 1) == "."
+
+    def test_pawn_diagonal_capture(self):
+        game = make_game([["bR", ".", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(150, 150)
+        game.handle_click(50, 50)
+        assert game.board.get_token(0, 0) == "wP"
+
+    def test_pawn_cannot_capture_forward(self):
+        game = make_game([[".", "bR", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(150, 150)
+        game.handle_click(150, 50)
+        assert game.board.get_token(0, 1) == "bR"
+        assert game.board.get_token(1, 1) == "wP"

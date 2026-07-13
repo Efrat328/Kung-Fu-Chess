@@ -118,3 +118,81 @@ class TestGetPathCells:
     def test_reverse_direction_path(self):
         cells = PieceMovementRules.get_path_cells((3, 3), (0, 0))
         assert cells == [(2, 2), (1, 1)]
+
+
+class TestWhitePawnMove:
+    def test_single_step_forward_to_empty_is_legal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 1), color="w", target_occupied_by_enemy=False
+        ) is True
+
+    def test_double_step_forward_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (3, 1), (1, 1), color="w", target_occupied_by_enemy=False
+        ) is False
+
+    def test_backward_step_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (2, 1), color="w", target_occupied_by_enemy=False
+        ) is False
+
+    def test_diagonal_capture_is_legal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 0), color="w", target_occupied_by_enemy=True
+        ) is True
+
+    def test_diagonal_without_enemy_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 0), color="w", target_occupied_by_enemy=False
+        ) is False
+
+    def test_forward_onto_enemy_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 1), color="w", target_occupied_by_enemy=True
+        ) is False
+
+
+class TestBlackPawnMove:
+    def test_single_step_forward_to_empty_is_legal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (2, 1), color="b", target_occupied_by_enemy=False
+        ) is True
+
+    def test_double_step_forward_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (0, 1), (2, 1), color="b", target_occupied_by_enemy=False
+        ) is False
+
+    def test_backward_step_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 1), color="b", target_occupied_by_enemy=False
+        ) is False
+
+    def test_diagonal_capture_is_legal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (2, 2), color="b", target_occupied_by_enemy=True
+        ) is True
+
+    def test_forward_onto_enemy_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (2, 1), color="b", target_occupied_by_enemy=True
+        ) is False
+
+
+class TestPawnDoesNotRequireClearPath:
+    def test_pawn_does_not_require_clear_path(self):
+        assert PieceMovementRules.requires_clear_path("P") is False
+
+
+class TestPawnInvalidColumnJump:
+    def test_pawn_column_jump_of_two_is_illegal(self):
+        assert PieceMovementRules.is_legal_move(
+            "P", (1, 1), (0, 3), color="w", target_occupied_by_enemy=False
+        ) is False
+
+
+class TestPieceRuleBaseClass:
+    def test_base_class_raises_not_implemented(self):
+        from piece_rules import PieceRule
+        with pytest.raises(NotImplementedError):
+            PieceRule().is_legal_move("w", (0, 0), (0, 1), False)
