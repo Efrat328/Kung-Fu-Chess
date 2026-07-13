@@ -40,3 +40,12 @@ class TestMainIntegration:
 
         captured = capsys.readouterr()
         assert captured.out.strip() == "ERROR ROW_WIDTH_MISMATCH"
+
+    def test_click_and_move_end_to_end(self, monkeypatch, capsys):
+        input_text = "Board:\nwK . .\n. . .\n. . .\nCommands:\nclick 50 50\nclick 150 150\nwait 1000\nprint board"
+        monkeypatch.setattr(sys, "stdin", io.StringIO(input_text))
+
+        main()
+
+        captured = capsys.readouterr()
+        assert captured.out.strip() == ". . .\n. wK .\n. . ."

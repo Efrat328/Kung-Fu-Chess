@@ -38,12 +38,17 @@ class Game:
             self.selected_pos = None
 
     def _request_move(self, from_pos, to_pos):
-        """מבצעת בקשת מהלך: בודקת אם המהלך חוקי לפי צורת התזוזה של הכלי,
-        ואם כן - מבצעת אותו מיידית (ללא זמן ריצה כרגע). מהלך לא חוקי מתעלם."""
+        """מבצעת בקשת מהלך: בודקת אם המהלך חוקי לפי צורת התזוזה של הכלי
+        ושהנתיב פנוי (עבור כלים שדורשים זאת), ואם כן - מבצעת אותו מיידית
+        (ללא זמן ריצה כרגע). מהלך לא חוקי או חסום מתעלם."""
         token = self.board.get_token(*from_pos)
         piece_letter = token[1]
         if not PieceMovementRules.is_legal_move(piece_letter, from_pos, to_pos):
             return
+        if PieceMovementRules.requires_clear_path(piece_letter):
+            path_cells = PieceMovementRules.get_path_cells(from_pos, to_pos)
+            if any(self.board.get_token(*cell) != "." for cell in path_cells):
+                return
         self.board.set_token(*from_pos, ".")
         self.board.set_token(*to_pos, token)
 

@@ -47,3 +47,23 @@ class PieceMovementRules:
     def _is_knight_move(row_diff, col_diff):
         """פרש: צורת L - שילוב של 1 ו-2 בערך מוחלט (בכל סדר)."""
         return {abs(row_diff), abs(col_diff)} == {1, 2}
+    @staticmethod
+    def requires_clear_path(piece_letter):
+        """בודקת האם סוג הכלי דורש נתיב פנוי (כל מי שלא פרש - שיודע 'לקפוץ')."""
+        return piece_letter in {"R", "B", "Q"}
+
+    @staticmethod
+    def get_path_cells(from_pos, to_pos):
+        """מחזירה את כל התאים שבדרך בין from_pos ל-to_pos, לא כולל שתי הנקודות עצמן.
+        מניחה מהלך ישר או אלכסוני תקין (כפי שכבר אומת ע"י is_legal_move)."""
+        row_diff = to_pos[0] - from_pos[0]
+        col_diff = to_pos[1] - from_pos[1]
+        steps = max(abs(row_diff), abs(col_diff))
+
+        row_step = (row_diff > 0) - (row_diff < 0)  # -1, 0 או 1
+        col_step = (col_diff > 0) - (col_diff < 0)
+
+        path_cells = []
+        for i in range(1, steps):
+            path_cells.append((from_pos[0] + row_step * i, from_pos[1] + col_step * i))
+        return path_cells
