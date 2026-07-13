@@ -34,3 +34,19 @@ class Board:
             return False
         color, piece = token[0], token[1]
         return color in {"w", "b"} and piece in {"K", "Q", "R", "B", "N", "P"}
+
+    def is_within_bounds(self, row, col):
+        """בודקת אם קואורדינטת שורה/עמודה נמצאת בתוך גבולות הלוח."""
+        return 0 <= row < self.num_rows and 0 <= col < self.num_cols
+
+    def get_token(self, row, col):
+        """מחזירה את הטוקן בתא נתון."""
+        return self.rows[row][col]
+
+    def set_token(self, row, col, token):
+        """מעדכנת את הטוקן בתא נתון."""
+        self.rows[row][col] = token
+
+    def get_color(self, token):
+        """מחזירה את צבע הכלי ('w'/'b') או None אם התא ריק."""
+        return None if token == "." else token[0]
