@@ -43,7 +43,14 @@ class Game:
         (ללא זמן ריצה כרגע). מהלך לא חוקי או חסום מתעלם."""
         token = self.board.get_token(*from_pos)
         piece_letter = token[1]
-        if not PieceMovementRules.is_legal_move(piece_letter, from_pos, to_pos):
+        color = self.board.get_color(token)
+        target_occupied_by_enemy = self.board.get_token(*to_pos) != "."
+
+        is_legal = PieceMovementRules.is_legal_move(
+            piece_letter, from_pos, to_pos,
+            color=color, target_occupied_by_enemy=target_occupied_by_enemy
+        )
+        if not is_legal:
             return
         if PieceMovementRules.requires_clear_path(piece_letter):
             path_cells = PieceMovementRules.get_path_cells(from_pos, to_pos)
