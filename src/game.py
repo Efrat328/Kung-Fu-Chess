@@ -51,9 +51,12 @@ class Game:
             self.selected_pos = None
  
     def _request_move(self, from_pos, to_pos):
-        """מבצעת בקשת מהלך: בודקת אם המהלך חוקי לפי צורת התזוזה של הכלי
-        ושהנתיב פנוי (עבור כלים שדורשים זאת). אם כן - יוצרת PendingMove
-        שיושלם בפועל רק כשהשעון יגיע לזמן ההגעה שלו (ר' advance_clock)."""
+        """מבצעת בקשת מהלך: בודקת שאין כבר מהלך אחר פעיל על הלוח (רק מהלך אחד
+        מותר בו-זמנית, לא משנה איזה כלי/צבע), שהמהלך חוקי לפי צורת התזוזה של
+        הכלי, ושהנתיב פנוי (עבור כלים שדורשים זאת). אם הכל תקין - יוצרת
+        PendingMove שיושלם בפועל רק כשהשעון יגיע לזמן ההגעה שלו."""
+        if self.pending_moves:
+            return
         token = self.board.get_token(*from_pos)
         piece_letter = token[1]
         color = self.board.get_color(token)

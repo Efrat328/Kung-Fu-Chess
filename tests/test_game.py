@@ -189,3 +189,25 @@ class TestPendingMoveBehavior:
         assert game.selected_pos is None
         game.advance_clock(3000)
         assert game.board.get_token(0, 2) == "wR"
+ 
+ 
+class TestGlobalMoveLock:
+    def test_second_move_request_ignored_while_first_is_pending(self):
+        game = make_game([["wR", ".", "."], [".", ".", "."], ["bR", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        game.handle_click(50, 250)
+        game.handle_click(250, 250)
+        game.advance_clock(2000)
+        assert game.board.get_token(0, 2) == "wR"
+        assert game.board.get_token(2, 0) == "bR"
+ 
+    def test_can_move_again_immediately_after_arrival_no_cooldown(self):
+        game = make_game([["wR", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(150, 50)
+        game.advance_clock(1000)
+        game.handle_click(150, 50)
+        game.handle_click(250, 50)
+        game.advance_clock(1000)
+        assert game.board.get_token(0, 2) == "wR"
