@@ -2,6 +2,7 @@
 import pytest
 from board import Board
 from game import Game
+from piece_rules import PieceMovementRules
 
 
 def make_game(rows):
@@ -129,7 +130,7 @@ class TestPawnMovement:
         game.handle_click(150, 150)
         game.handle_click(150, 50)
         game.advance_clock(2000)
-        assert game.board.get_token(0, 1) == "wP"
+        assert game.board.get_token(0, 1) == "wQ"  # הגיע לשורה 0 = שורה אחרונה ללבן -> קודם
         assert game.board.get_token(1, 1) == "."
 
     def test_black_pawn_moves_down(self):
@@ -137,7 +138,7 @@ class TestPawnMovement:
         game.handle_click(150, 150)
         game.handle_click(150, 250)
         game.advance_clock(2000)
-        assert game.board.get_token(2, 1) == "bP"
+        assert game.board.get_token(2, 1) == "bQ"  # הגיע לשורה 2 = שורה אחרונה לשחור -> קודם
         assert game.board.get_token(1, 1) == "."
 
     def test_white_pawn_double_step_is_illegal(self):
@@ -152,7 +153,7 @@ class TestPawnMovement:
         game.handle_click(150, 150)
         game.handle_click(50, 50)
         game.advance_clock(2000)
-        assert game.board.get_token(0, 0) == "wP"
+        assert game.board.get_token(0, 0) == "wQ"  # הגיע לשורה 0 = שורה אחרונה ללבן -> קודם
 
     def test_pawn_cannot_capture_forward(self):
         game = make_game([[".", "bR", "."], [".", "wP", "."], [".", ".", "."]])
@@ -291,3 +292,51 @@ class TestGameOver:
         game.advance_clock(1000)
         assert game.board.get_token(1, 0) == "bR"
         assert game.selected_pos is None
+
+
+class TestPawnPromotion:
+    def test_pawn_promotes_when_reaching_last_row(self):
+        game = make_game([[".", ".", "."], ["wP", ".", "."]])
+        game.handle_click(50, 150)
+        game.handle_click(50, 50)
+        game.advance_clock(1000)
+        assert game.board.get_token(0, 0) == "wQ"
+
+    def test_black_pawn_promotes_when_reaching_last_row(self):
+        game = make_game([["bP", ".", "."], [".", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(50, 150)
+        game.advance_clock(1000)
+        assert game.board.get_token(1, 0) == "bQ"
+
+    def test_pawn_does_not_promote_before_reaching_last_row(self):
+        game = make_game([[".", ".", "."], [".", ".", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(150, 250)
+        game.handle_click(150, 150)
+        game.advance_clock(1000)
+        assert game.board.get_token(1, 1) == "wP"
+
+    def test_pawn_double_step_from_start_row(self):
+        game = make_game([[".", ".", "."], [".", ".", "."], [".", ".", "."], [".", "wP", "."]])
+        game.handle_click(150, 350)
+        game.handle_click(150, 150)
+        game.advance_clock(2000)
+        assert game.board.get_token(1, 1) == "wP"
+        assert game.board.get_token(3, 1) == "."
+
+    def test_pawn_double_step_blocked_by_piece_in_path(self):
+        game = make_game([[".", ".", "."], [".", ".", "."], [".", "bR", "."], [".", "wP", "."]])
+        game.handle_click(150, 350)
+        game.handle_click(150, 150)
+        game.advance_clock(2000)
+        assert game.board.get_token(3, 1) == "wP"
+
+    def test_pawn_double_step_not_from_start_row_is_illegal(self):
+        game = make_game([[".", ".", "."], [".", ".", "."], [".", "wP", "."], [".", ".", "."]])
+        game.handle_click(150, 250)
+        game.handle_click(150, 50)
+        game.advance_clock(2000)
+        assert game.board.get_token(2, 1) == "wP"
+
+    def test_start_row_check_for_unknown_color_is_false(self):
+        assert PieceMovementRules.is_pawn_start_row("x", 0, 4) is False

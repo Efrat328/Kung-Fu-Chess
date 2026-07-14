@@ -94,8 +94,8 @@ class TestRequiresClearPath:
     def test_knight_does_not_require_clear_path(self):
         assert PieceMovementRules.requires_clear_path("N") is False
 
-    def test_king_does_not_require_clear_path(self):
-        assert PieceMovementRules.requires_clear_path("K") is False
+    def test_king_requires_clear_path_by_default(self):
+        assert PieceMovementRules.requires_clear_path("K") is True
 
 
 class TestGetPathCells:
@@ -179,9 +179,9 @@ class TestBlackPawnMove:
         ) is False
 
 
-class TestPawnDoesNotRequireClearPath:
-    def test_pawn_does_not_require_clear_path(self):
-        assert PieceMovementRules.requires_clear_path("P") is False
+class TestPawnRequiresClearPath:
+    def test_pawn_requires_clear_path_for_double_step(self):
+        assert PieceMovementRules.requires_clear_path("P") is True
 
 
 class TestPawnInvalidColumnJump:
