@@ -211,3 +211,48 @@ class TestGlobalMoveLock:
         game.handle_click(250, 50)
         game.advance_clock(1000)
         assert game.board.get_token(0, 2) == "wR"
+ 
+ 
+class TestAdvancedInteractionCases:
+    def test_enemy_collision_first_mover_wins(self):
+        game = make_game([["wR", ".", ".", "bR"]])
+        game.handle_click(50, 50)
+        game.handle_click(350, 50)
+        game.handle_click(350, 50)
+        game.handle_click(50, 50)
+        game.advance_clock(3000)
+        assert game.board.get_token(0, 3) == "wR"
+ 
+    def test_enemy_collision_black_first_mover_wins(self):
+        game = make_game([["wR", ".", ".", "bR"]])
+        game.handle_click(350, 50)
+        game.handle_click(50, 50)
+        game.handle_click(50, 50)
+        game.handle_click(350, 50)
+        game.advance_clock(3000)
+        assert game.board.get_token(0, 0) == "bR"
+ 
+    def test_cannot_start_move_through_friendly_piece(self):
+        game = make_game([[".", ".", "."], ["wR", "wP", "."], [".", ".", "."]])
+        game.handle_click(50, 150)
+        game.handle_click(250, 150)
+        game.advance_clock(2000)
+        assert game.board.get_token(1, 0) == "wR"
+        assert game.board.get_token(1, 1) == "wP"
+ 
+    def test_knight_cannot_land_on_friendly_piece(self):
+        game = make_game([[".", "wP", "."], [".", ".", "."], ["wN", ".", "."]])
+        game.handle_click(50, 250)
+        game.handle_click(150, 50)
+        game.advance_clock(1000)
+        assert game.board.get_token(2, 0) == "wN"
+        assert game.board.get_token(0, 1) == "wP"
+ 
+    def test_premove_does_not_execute_while_first_move_pending(self):
+        game = make_game([["wR", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(150, 50)
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        game.advance_clock(2000)
+        assert game.board.get_token(0, 1) == "wR"
