@@ -340,3 +340,86 @@ class TestPawnPromotion:
 
     def test_start_row_check_for_unknown_color_is_false(self):
         assert PieceMovementRules.is_pawn_start_row("x", 0, 4) is False
+
+
+class TestJump:
+    def test_jump_lands_normally_when_no_enemy_arrives(self):
+        game = make_game([[".", ".", "."], [".", "wK", "."], [".", ".", "."]])
+        game.handle_jump(150, 150)
+        game.advance_clock(1000)
+        assert game.board.get_token(1, 1) == "wK"
+        assert game.airborne is None
+
+    def test_airborne_piece_captures_arriving_enemy(self):
+        game = make_game([[".", ".", "."], ["wK", "bR", "."], [".", ".", "."]])
+        game.handle_jump(50, 150)
+        game.handle_click(150, 150)
+        game.handle_click(50, 150)
+        game.advance_clock(1000)
+        assert game.board.get_token(1, 0) == "wK"
+        assert game.board.get_token(1, 1) == "."
+
+    def test_jump_after_piece_already_captured_has_no_effect(self):
+        game = make_game([[".", ".", "."], ["wK", "bR", "."], [".", ".", "."]])
+        game.handle_click(150, 150)
+        game.handle_click(50, 150)
+        game.advance_clock(1000)
+        game.handle_jump(50, 150)
+        assert game.board.get_token(1, 0) == "bR"
+
+    def test_enemy_arrives_after_landing_captures_normally(self):
+        game = make_game([[".", ".", ".", "."], ["wK", ".", ".", "bR"], [".", ".", ".", "."]])
+        game.handle_jump(50, 150)
+        game.advance_clock(1000)
+        game.handle_click(350, 150)
+        game.handle_click(50, 150)
+        game.advance_clock(3000)
+        assert game.board.get_token(1, 0) == "bR"
+        assert game.game_over is True
+
+    def test_cannot_jump_while_piece_is_moving(self):
+        game = make_game([["wR", ".", "."]])
+        game.handle_click(50, 50)
+        game.handle_click(250, 50)
+        game.advance_clock(500)
+        game.handle_jump(50, 50)
+        assert game.airborne is None
+        game.advance_clock(1500)
+        assert game.board.get_token(0, 2) == "wR"
+
+    def test_airborne_does_not_affect_friendly_click(self):
+        game = make_game([[".", ".", "."], ["wK", "wR", "."], [".", ".", "."]])
+        game.handle_jump(50, 150)
+        game.handle_click(150, 150)
+        game.handle_click(50, 150)
+        game.advance_clock(1000)
+        assert game.board.get_token(1, 0) == "wK"
+        assert game.board.get_token(1, 1) == "wR"
+
+    def test_jump_ignored_after_game_over(self):
+        game = make_game([["wR", "bK"]])
+        game.handle_click(50, 50)
+        game.handle_click(150, 50)
+        game.advance_clock(1000)
+        assert game.game_over is True
+        game.handle_jump(50, 50)
+        assert game.airborne is None
+
+    def test_jump_on_empty_cell_is_ignored(self):
+        game = make_game([[".", "."]])
+        game.handle_jump(50, 50)
+        assert game.airborne is None
+
+    def test_jump_outside_board_is_ignored(self):
+        game = make_game([["wK"]])
+        game.handle_jump(500, 500)
+        assert game.airborne is None
+
+    def test_arriving_move_to_different_cell_ignores_airborne(self):
+        game = make_game([["wK", ".", "wR", "."]])
+        game.handle_jump(50, 50)
+        game.handle_click(250, 50)
+        game.handle_click(350, 50)
+        game.advance_clock(1000)
+        assert game.board.get_token(0, 3) == "wR"
+        assert game.board.get_token(0, 0) == "wK"

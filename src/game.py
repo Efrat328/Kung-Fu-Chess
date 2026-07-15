@@ -1,15 +1,17 @@
 from piece_rules import PieceMovementRules
 from pending_move import PendingMove
 from move_queue import MoveQueue
+from airborne_state import AirborneState
 
 CELL_SIZE_PX = 100  # גודל כל תא בפיקסלים - קבוע קונפיגורציה, לא hardcoded בלוגיקה
 MOVE_DURATION_MS_PER_CELL = 1000  # זמן ריצה (מ"ש) לכל תא מרחק במהלך - קבוע קונפיגורציה
+JUMP_DURATION_MS = 1000  # משך זמן קפיצה (מ"ש) - קבוע קונפיגורציה
 
 
 class Game:
-    """מתאמת בין קליקים של המשתמש, כללי התזוזה של הכלים ותור המהלכים הממתינים.
-    לא מכילה ידע ספציפי על סוגי כלים (זה ב-piece_rules) ולא על ניהול התור
-    הפנימי (זה ב-move_queue) - רק את זרימת המשחק עצמה."""
+    """מתאמת בין קליקים/קפיצות של המשתמש, כללי התזוזה של הכלים ותור המהלכים
+    הממתינים. לא מכילה ידע ספציפי על סוגי כלים (זה ב-piece_rules) ולא על ניהול
+    התור הפנימי (זה ב-move_queue) - רק את זרימת המשחק עצמה."""
 
     def __init__(self, board):
         self.board = board
@@ -17,14 +19,14 @@ class Game:
         self.clock_ms = 0
         self.move_queue = MoveQueue()
         self.game_over = False
+        self.airborne = None
 
     def handle_click(self, x, y):
         """ממירה קואורדינטת פיקסלים לתא בלוח ומטפלת בבחירה/מהלך בהתאם.
         כלי שנמצא כרגע 'בתנועה' מתעלם מקליקים. אחרי סיום המשחק, כל קליק מתעלם."""
         if self.game_over:
             return
-        row = y // CELL_SIZE_PX
-        col = x // CELL_SIZE_PX
+        row, col = self._pixels_to_cell(x, y)
         if not self.board.is_within_bounds(row, col):
             return
         if self.move_queue.is_position_busy((row, col)):
@@ -34,6 +36,27 @@ class Game:
             self._select_if_piece(row, col, clicked_token)
         else:
             self._handle_click_with_selection(row, col, clicked_token)
+
+    def handle_jump(self, x, y):
+        """ממירה קואורדינטת פיקסלים לתא בלוח ומנסה להתחיל קפיצה של הכלי שם.
+        כלי בתנועה לא יכול לקפוץ (חוק 5), ותא ריק (כולל כלי שכבר נתפס - חוק 6)
+        מתעלם. הכלי נשאר פיזית באותו תא - רק 'מסומן' כבאוויר עד לזמן הנחיתה."""
+        if self.game_over:
+            return
+        row, col = self._pixels_to_cell(x, y)
+        if not self.board.is_within_bounds(row, col):
+            return
+        if self.move_queue.is_position_busy((row, col)):
+            return
+        token = self.board.get_token(row, col)
+        if token == ".":
+            return
+        color = self.board.get_color(token)
+        self.airborne = AirborneState((row, col), color, self.clock_ms + JUMP_DURATION_MS)
+
+    def _pixels_to_cell(self, x, y):
+        """ממירה קואורדינטת פיקסלים למספר שורה/עמודה בלוח."""
+        return y // CELL_SIZE_PX, x // CELL_SIZE_PX
 
     def _select_if_piece(self, row, col, token):
         """בוחרת כלי אם התא לא ריק; מתעלמת מתא ריק."""
@@ -78,11 +101,35 @@ class Game:
         self.move_queue.add(PendingMove(from_pos, to_pos, token, arrival_time))
 
     def advance_clock(self, ms):
-        """מקדמת את שעון המשחק, ומשלימה בפועל כל מהלך ממתין שהגיע זמנו."""
+        """מקדמת את שעון המשחק, ומשלימה בפועל כל מהלך ממתין שהגיע זמנו - תוך
+        בדיקה האם מהלך כלשהו 'נבלם' ע"י כלי באוויר (תפיסה הפוכה). אחרי הטיפול
+        במהלכים, בודקת אם הכלי הקופץ נחת (חלון הקפיצה הסתיים)."""
         self.clock_ms += ms
         arrived_moves = self.move_queue.advance(self.clock_ms)
         for move in arrived_moves:
-            self._complete_move(move)
+            if self._is_blocked_by_airborne(move):
+                self._resolve_airborne_capture(move)
+            else:
+                self._complete_move(move)
+        self._land_airborne_if_expired()
+
+    def _is_blocked_by_airborne(self, move):
+        """בודקת האם המהלך שהגיע מתנגש בכלי אויב שנמצא באוויר ביעד שלו."""
+        if self.airborne is None:
+            return False
+        if self.airborne.position != move.to_pos:
+            return False
+        moving_color = self.board.get_color(move.token)
+        return moving_color != self.airborne.color and self.airborne.is_active(self.clock_ms)
+
+    def _resolve_airborne_capture(self, move):
+        """מסירה מהלוח את הכלי המגיע (הוא נתפס ע"י הכלי הקופץ), שנשאר במקומו."""
+        self.board.set_token(*move.from_pos, ".")
+
+    def _land_airborne_if_expired(self):
+        """מנקה את מצב ה'באוויר' אם חלון הקפיצה הסתיים - הכלי נוחת (נשאר במקומו)."""
+        if self.airborne is not None and self.clock_ms >= self.airborne.until_time:
+            self.airborne = None
 
     def _complete_move(self, move):
         """מבצעת בפועל על הלוח מהלך שהגיע זמנו. אם הכלי שנתפס הוא מלך,

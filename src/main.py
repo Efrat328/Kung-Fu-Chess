@@ -26,6 +26,9 @@ def main():
         if verb == "click":
             x, y = int(tokens[1]), int(tokens[2])
             game.handle_click(x, y)
+        elif verb == "jump":
+            x, y = int(tokens[1]), int(tokens[2])
+            game.handle_jump(x, y)
         elif verb == "wait":
             ms = int(tokens[1])
             game.advance_clock(ms)
